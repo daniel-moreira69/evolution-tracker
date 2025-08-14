@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Goal, HealthMetric } from "@/types/health";
+import { GoalBreakdown } from "./GoalBreakdown";
 
 interface MetricCardProps {
   title: string;
@@ -24,82 +25,68 @@ export function MetricCard({
   icon, 
   color 
 }: MetricCardProps) {
-  const getTrend = () => {
-    if (!lastMetric || !previousMetric || !value) return null;
+  const displayValue = value ? value.toFixed(1) : '--';
+  
+  // Calculate change from previous measurement
+  const change = (() => {
+    if (!value || !previousMetric) return null;
     
-    const current = value;
-    const previous = getPreviousValue();
+    const getValueFromMetric = (metric: HealthMetric, type?: string): number | undefined => {
+      switch (type || goal?.type) {
+        case 'weight': return metric.weight;
+        case 'muscleMass': return metric.muscleMass;
+        case 'fatMass': return metric.fatMass;
+        case 'bmi': return metric.bmi;
+        case 'fatPercentage': return metric.fatPercentage;
+        default: return undefined;
+      }
+    };
     
-    if (!previous) return null;
-    
-    if (current > previous) return { direction: 'up', percentage: ((current - previous) / previous * 100).toFixed(1) };
-    if (current < previous) return { direction: 'down', percentage: ((previous - current) / previous * 100).toFixed(1) };
-    return { direction: 'same', percentage: '0' };
-  };
+    const previousValue = getValueFromMetric(previousMetric, goal?.type);
+    return previousValue ? value - previousValue : null;
+  })();
 
-  const getPreviousValue = (): number | undefined => {
-    if (!previousMetric) return undefined;
-    
-    switch (goal?.type) {
-      case 'weight': return previousMetric.weight;
-      case 'muscleMass': return previousMetric.muscleMass;
-      case 'fatMass': return previousMetric.fatMass;
-      case 'bmi': return previousMetric.bmi;
-      case 'fatPercentage': return previousMetric.fatPercentage;
-      default: return undefined;
-    }
-  };
-
-  const getProgress = () => {
-    if (!goal || !value) return 0;
-    
-    const start = goal.currentValue || 0;
-    const target = goal.targetValue;
-    const current = value;
-    
-    if (start === target) return 100;
-    
-    const progress = ((current - start) / (target - start)) * 100;
-    return Math.max(0, Math.min(100, progress));
-  };
-
-  const trend = getTrend();
-  const progress = getProgress();
+  const changeColor = change === null ? 'text-muted-foreground' : 
+    change > 0 ? 'text-success' : 
+    change < 0 ? 'text-destructive' : 'text-muted-foreground';
 
   return (
-    <Card className="shadow-soft hover:shadow-glow transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">{title}</CardTitle>
-        <div className={`p-2 rounded-lg bg-gradient-to-br ${color}`}>
-          {icon}
+    <Card className="overflow-hidden bg-gradient-dark border-border/50 shadow-intense hover:shadow-glow transition-all duration-300 hover:scale-105">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm font-medium text-gold-light font-rajdhani font-semibold">
+            {title}
+          </CardTitle>
+          <div className={`rounded-full p-2 bg-gradient-to-br ${color} glow`}>
+            {icon}
+          </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">
-          {value ? `${value.toFixed(1)} ${unit}` : `-- ${unit}`}
+      <CardContent className="pt-0">
+        <div className="space-y-2">
+          <div className="flex items-baseline gap-1">
+            <span className="text-2xl font-bold text-primary font-oswald">
+              {displayValue}
+            </span>
+            <span className="text-sm text-gold-light font-rajdhani">{unit}</span>
+            {change !== null && (
+              <span className={`text-xs flex items-center gap-1 font-rajdhani font-medium ${changeColor}`}>
+                {change > 0 ? (
+                  <TrendingUp className="h-3 w-3" />
+                ) : change < 0 ? (
+                  <TrendingDown className="h-3 w-3" />
+                ) : (
+                  <Minus className="h-3 w-3" />
+                )}
+                {Math.abs(change).toFixed(1)}{unit}
+              </span>
+            )}
+          </div>
+          
+          {goal && (
+            <GoalBreakdown goal={goal} onUpdate={() => {}} />
+          )}
         </div>
-        
-        {trend && (
-          <div className="flex items-center text-xs text-muted-foreground mt-1">
-            {trend.direction === 'up' && <TrendingUp className="h-3 w-3 text-success mr-1" />}
-            {trend.direction === 'down' && <TrendingDown className="h-3 w-3 text-destructive mr-1" />}
-            {trend.direction === 'same' && <Minus className="h-3 w-3 text-muted-foreground mr-1" />}
-            {trend.percentage}% desde última medição
-          </div>
-        )}
-        
-        {goal && (
-          <div className="mt-3">
-            <div className="flex justify-between text-xs text-muted-foreground mb-1">
-              <span>Meta: {goal.targetValue.toFixed(1)} {unit}</span>
-              <span>{progress.toFixed(0)}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-            <div className="text-xs text-muted-foreground mt-1">
-              até {goal.targetDate.toLocaleDateString('pt-BR')}
-            </div>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

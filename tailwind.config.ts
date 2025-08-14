@@ -18,6 +18,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'oswald': ['Oswald', 'sans-serif'],
+				'rajdhani': ['Rajdhani', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -78,11 +82,13 @@ export default {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-accent': 'var(--gradient-accent)',
 				'gradient-success': 'var(--gradient-success)',
-				'gradient-hero': 'var(--gradient-hero)'
+				'gradient-hero': 'var(--gradient-hero)',
+				'gradient-dark': 'var(--gradient-dark)'
 			},
 			boxShadow: {
 				'soft': 'var(--shadow-soft)',
-				'glow': 'var(--shadow-glow)'
+				'glow': 'var(--shadow-glow)',
+				'intense': 'var(--shadow-intense)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',

@@ -2,13 +2,17 @@ import { useState, useEffect, useRef } from "react";
 import { MetricCard } from "./MetricCard";
 import { AddMetricForm } from "./AddMetricForm";
 import { GoalForm } from "./GoalForm";
+import { MetricChart } from "./MetricChart";
+import { GoalProgressChart } from "./GoalProgressChart";
 import { HealthMetric, Goal, MetricType } from "@/types/health";
 import { calculateIntermediateGoals, updateGoalProgress } from "@/utils/goalCalculator";
-import { Weight, Dumbbell, Zap, Activity, Target } from "lucide-react";
+import { Weight, Dumbbell, Zap, Activity, Target, TrendingUp, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { GoalsPanel } from "./GoalsPanel";
+import crossfitBg from "@/assets/crossfit-bg.jpg";
+import deadliftSilhouette from "@/assets/deadlift-silhouette.jpg";
 
 const metricIcons = {
   weight: <Weight className="h-5 w-5 text-white" />,
@@ -21,9 +25,9 @@ const metricIcons = {
 const metricColors = {
   weight: "from-primary to-primary-glow",
   muscleMass: "from-accent to-accent-glow", 
-  fatMass: "from-warning to-orange-400",
+  fatMass: "from-warning to-warning",
   bmi: "from-success to-success-glow",
-  fatPercentage: "from-destructive to-red-400"
+  fatPercentage: "from-destructive to-destructive"
 };
 
 const metricLabels = {
@@ -210,113 +214,172 @@ export function Dashboard() {
   const previousMetric = getPreviousMetric();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-hero bg-clip-text text-transparent">
-            Acompanhamento Corporal
-          </h1>
-          <p className="text-muted-foreground">
-            Monitore sua evolução e alcance suas metas de saúde
-          </p>
-        </div>
-
-        {/* Toolbar */}
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Button variant="secondary" onClick={handleExport}>
-            Exportar dados (JSON)
-          </Button>
-          <Button variant="outline" onClick={onImportClick}>
-            Importar dados
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/json"
-            className="hidden"
-            onChange={onFileChange}
-          />
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">Limpar dados</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Tem certeza que deseja limpar?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Essa ação removerá todas as medições e metas salvas neste dispositivo. Não poderá ser desfeita.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={clearData}>Limpar</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-
-        {/* Metrics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {(Object.keys(metricLabels) as MetricType[]).map((type) => (
-            <MetricCard
-              key={type}
-              title={metricLabels[type].label}
-              value={currentValues[type]}
-              unit={metricLabels[type].unit}
-              goal={getMetricGoal(type)}
-              lastMetric={lastMetric}
-              previousMetric={previousMetric}
-              icon={metricIcons[type]}
-              color={metricColors[type]}
-            />
-          ))}
-        </div>
-
-        {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <AddMetricForm onAddMetric={addMetric} />
-          <GoalForm onAddGoal={addGoal} currentValues={currentValues} />
-        </div>
-
-        {/* Goals Panel */}
-        {goals.length > 0 && (
-          <GoalsPanel goals={goals} onUpdateGoal={onUpdateGoal} />
-        )}
-
-
-        {/* Recent Metrics Table (if there are metrics) */}
-        {metrics.length > 0 && (
-          <div className="bg-card rounded-lg shadow-soft p-6">
-            <h2 className="text-xl font-semibold mb-4">Histórico Recente</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border">
-                    <th className="text-left p-2">Data</th>
-                    <th className="text-left p-2">Peso</th>
-                    <th className="text-left p-2">Massa Muscular</th>
-                    <th className="text-left p-2">Massa de Gordura</th>
-                    <th className="text-left p-2">IMC</th>
-                    <th className="text-left p-2">% Gordura</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {metrics.slice(0, 5).map((metric) => (
-                    <tr key={metric.id} className="border-b border-border/50">
-                      <td className="p-2">{metric.date.toLocaleDateString('pt-BR')}</td>
-                      <td className="p-2">{metric.weight ? `${metric.weight.toFixed(1)} kg` : '-'}</td>
-                      <td className="p-2">{metric.muscleMass ? `${metric.muscleMass.toFixed(1)} kg` : '-'}</td>
-                      <td className="p-2">{metric.fatMass ? `${metric.fatMass.toFixed(1)} kg` : '-'}</td>
-                      <td className="p-2">{metric.bmi ? metric.bmi.toFixed(1) : '-'}</td>
-                      <td className="p-2">{metric.fatPercentage ? `${metric.fatPercentage.toFixed(1)}%` : '-'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+    <div className="min-h-screen bg-background relative overflow-hidden">
+      {/* Background Image */}
+      <div 
+        className="absolute inset-0 opacity-20 bg-cover bg-center bg-no-repeat"
+        style={{
+          backgroundImage: `url(${crossfitBg})`,
+          filter: 'blur(1px)'
+        }}
+      />
+      
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-background/90 via-background/95 to-background/90" />
+      
+      <div className="relative z-10 p-4">
+        <div className="max-w-7xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="text-center space-y-4 py-8">
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <div 
+                className="w-16 h-16 bg-cover bg-center rounded-full border-2 border-primary glow"
+                style={{ backgroundImage: `url(${deadliftSilhouette})` }}
+              />
+              <h1 className="text-5xl font-oswald font-bold bg-gradient-hero bg-clip-text text-transparent">
+                CROSSFIT TRACKER
+              </h1>
+              <div 
+                className="w-16 h-16 bg-cover bg-center rounded-full border-2 border-primary glow"
+                style={{ backgroundImage: `url(${deadliftSilhouette})` }}
+              />
             </div>
+            <p className="text-gold-light text-lg font-rajdhani font-medium">
+              TRANSFORME SEU CORPO • SUPERE SEUS LIMITES • ALCANCE SUAS METAS
+            </p>
           </div>
-        )}
+
+          {/* Toolbar */}
+          <div className="flex flex-wrap items-center justify-center gap-3 py-4">
+            <Button variant="secondary" onClick={handleExport} className="shadow-glow">
+              Exportar dados (JSON)
+            </Button>
+            <Button variant="outline" onClick={onImportClick} className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+              Importar dados
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json"
+              className="hidden"
+              onChange={onFileChange}
+            />
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" className="shadow-glow">Limpar dados</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="bg-card border-border">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-primary font-oswald">Tem certeza que deseja limpar?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-muted-foreground">
+                    Essa ação removerá todas as medições e metas salvas neste dispositivo. Não poderá ser desfeita.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="border-border">Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={clearData} className="bg-destructive hover:bg-destructive/90">Limpar</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+
+          {/* Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            {(Object.keys(metricLabels) as MetricType[]).map((type) => (
+              <MetricCard
+                key={type}
+                title={metricLabels[type].label}
+                value={currentValues[type]}
+                unit={metricLabels[type].unit}
+                goal={getMetricGoal(type)}
+                lastMetric={lastMetric}
+                previousMetric={previousMetric}
+                icon={metricIcons[type]}
+                color={metricColors[type]}
+              />
+            ))}
+          </div>
+
+          {/* Action Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <AddMetricForm onAddMetric={addMetric} />
+            <GoalForm onAddGoal={addGoal} currentValues={currentValues} />
+          </div>
+
+          {/* Charts Section */}
+          <div className="space-y-6">
+            <div className="text-center">
+              <h2 className="text-3xl font-oswald font-bold text-primary mb-2 flex items-center justify-center gap-2">
+                <BarChart3 className="h-8 w-8" />
+                ANÁLISE DE PROGRESSO
+              </h2>
+              <p className="text-muted-foreground font-rajdhani">
+                Acompanhe sua evolução e o progresso das suas metas
+              </p>
+            </div>
+
+            {/* Goal Progress Chart */}
+            <GoalProgressChart goals={goals} />
+
+            {/* Individual Metric Charts */}
+            {metrics.length > 1 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {(Object.keys(metricLabels) as MetricType[]).map((type) => (
+                  <MetricChart
+                    key={type}
+                    metrics={metrics}
+                    type={type}
+                    title={metricLabels[type].label}
+                    unit={metricLabels[type].unit}
+                    color={metricColors[type]}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Goals Panel */}
+          {goals.length > 0 && (
+            <GoalsPanel goals={goals} onUpdateGoal={onUpdateGoal} />
+          )}
+
+
+          {/* Recent Metrics Table (if there are metrics) */}
+          {metrics.length > 0 && (
+            <div className="bg-gradient-dark rounded-lg shadow-intense border border-border/50 p-6">
+              <h2 className="text-xl font-oswald font-semibold mb-4 text-primary flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                HISTÓRICO RECENTE
+              </h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left p-3 text-gold font-rajdhani font-semibold">Data</th>
+                      <th className="text-left p-3 text-gold font-rajdhani font-semibold">Peso</th>
+                      <th className="text-left p-3 text-gold font-rajdhani font-semibold">Massa Muscular</th>
+                      <th className="text-left p-3 text-gold font-rajdhani font-semibold">Massa de Gordura</th>
+                      <th className="text-left p-3 text-gold font-rajdhani font-semibold">IMC</th>
+                      <th className="text-left p-3 text-gold font-rajdhani font-semibold">% Gordura</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics.slice(0, 5).map((metric) => (
+                      <tr key={metric.id} className="border-b border-border/30 hover:bg-muted/20 transition-colors">
+                        <td className="p-3 font-rajdhani font-medium">{metric.date.toLocaleDateString('pt-BR')}</td>
+                        <td className="p-3 font-rajdhani">{metric.weight ? `${metric.weight.toFixed(1)} kg` : '-'}</td>
+                        <td className="p-3 font-rajdhani">{metric.muscleMass ? `${metric.muscleMass.toFixed(1)} kg` : '-'}</td>
+                        <td className="p-3 font-rajdhani">{metric.fatMass ? `${metric.fatMass.toFixed(1)} kg` : '-'}</td>
+                        <td className="p-3 font-rajdhani">{metric.bmi ? metric.bmi.toFixed(1) : '-'}</td>
+                        <td className="p-3 font-rajdhani">{metric.fatPercentage ? `${metric.fatPercentage.toFixed(1)}%` : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

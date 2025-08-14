@@ -1,57 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* CrossFit Dark Theme Design System with Golden Accents */
 
 @layer base {
   :root {
-    --background: 220 15% 97%;
-    --foreground: 220 15% 12%;
+    /* CrossFit Dark Theme - Light mode (for fallback) */
+    --background: 220 25% 8%;
+    --foreground: 0 0% 100%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 15% 12%;
+    --card: 220 20% 12%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 12%;
+    --popover: 220 20% 12%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 200 95% 55%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 200 80% 65%;
+    /* Golden Primary Colors */
+    --primary: 45 100% 65%;
+    --primary-foreground: 220 25% 8%;
+    --primary-glow: 45 90% 75%;
 
-    --secondary: 220 15% 95%;
-    --secondary-foreground: 220 15% 15%;
+    --secondary: 220 20% 15%;
+    --secondary-foreground: 45 100% 70%;
 
-    --muted: 220 15% 95%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 220 20% 15%;
+    --muted-foreground: 220 10% 65%;
 
-    --accent: 165 85% 50%;
-    --accent-foreground: 0 0% 100%;
-    --accent-glow: 165 70% 60%;
+    /* Accent Gold */
+    --accent: 45 100% 70%;
+    --accent-foreground: 220 25% 8%;
+    --accent-glow: 45 85% 80%;
 
-    --success: 145 85% 45%;
+    /* Success Green */
+    --success: 120 60% 50%;
     --success-foreground: 0 0% 100%;
-    --success-glow: 145 70% 55%;
+    --success-glow: 120 50% 60%;
 
-    --warning: 45 95% 55%;
+    /* Warning Orange */
+    --warning: 25 95% 60%;
     --warning-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
+    /* Destructive Red */
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 88%;
-    --input: 220 15% 94%;
-    --ring: 200 95% 55%;
+    --border: 220 20% 25%;
+    --input: 220 20% 15%;
+    --ring: 45 100% 65%;
 
-    --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
-    --gradient-accent: linear-gradient(135deg, hsl(var(--accent)), hsl(var(--accent-glow)));
-    --gradient-success: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success-glow)));
-    --gradient-hero: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)));
+    /* CrossFit Inspired Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(45 100% 65%), hsl(45 90% 75%));
+    --gradient-accent: linear-gradient(135deg, hsl(45 100% 70%), hsl(25 95% 60%));
+    --gradient-success: linear-gradient(135deg, hsl(120 60% 50%), hsl(120 50% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(45 100% 65%) 0%, hsl(25 95% 60%) 50%, hsl(220 25% 8%) 100%);
+    --gradient-dark: linear-gradient(135deg, hsl(220 25% 8%), hsl(220 20% 12%));
 
-    --shadow-soft: 0 4px 20px -4px hsl(var(--primary) / 0.15);
-    --shadow-glow: 0 0 30px hsl(var(--primary) / 0.3);
+    /* Dramatic Shadows */
+    --shadow-soft: 0 8px 32px -8px hsl(45 100% 65% / 0.25);
+    --shadow-glow: 0 0 40px hsl(45 100% 65% / 0.4);
+    --shadow-intense: 0 16px 64px -16px hsl(220 25% 8% / 0.8);
 
     --radius: 0.75rem;
 
@@ -73,42 +83,44 @@ All colors MUST be HSL.
   }
 
   .dark {
+    /* Enhanced Dark Mode for CrossFit Theme */
     --background: 220 25% 8%;
-    --foreground: 220 15% 92%;
+    --foreground: 0 0% 100%;
 
     --card: 220 20% 12%;
-    --card-foreground: 220 15% 92%;
+    --card-foreground: 0 0% 100%;
 
     --popover: 220 20% 12%;
-    --popover-foreground: 220 15% 92%;
+    --popover-foreground: 0 0% 100%;
 
-    --primary: 200 95% 60%;
+    /* Enhanced Golden Colors for Dark Mode */
+    --primary: 45 100% 70%;
     --primary-foreground: 220 25% 8%;
-    --primary-glow: 200 80% 70%;
+    --primary-glow: 45 85% 80%;
 
     --secondary: 220 20% 15%;
-    --secondary-foreground: 220 15% 85%;
+    --secondary-foreground: 45 100% 75%;
 
     --muted: 220 20% 15%;
-    --muted-foreground: 220 10% 55%;
+    --muted-foreground: 220 10% 70%;
 
-    --accent: 165 85% 55%;
+    --accent: 45 100% 75%;
     --accent-foreground: 220 25% 8%;
-    --accent-glow: 165 70% 65%;
+    --accent-glow: 45 80% 85%;
 
-    --success: 145 85% 50%;
-    --success-foreground: 220 25% 8%;
-    --success-glow: 145 70% 60%;
+    --success: 120 60% 55%;
+    --success-foreground: 0 0% 100%;
+    --success-glow: 120 50% 65%;
 
-    --warning: 45 95% 60%;
+    --warning: 25 95% 65%;
     --warning-foreground: 220 25% 8%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 220 15% 92%;
+    --destructive: 0 84% 65%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 18%;
+    --border: 220 20% 25%;
     --input: 220 20% 15%;
-    --ring: 200 95% 60%;
+    --ring: 45 100% 70%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -126,6 +138,65 @@ All colors MUST be HSL.
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-rajdhani;
+    background-image: radial-gradient(circle at 25% 25%, hsl(45 100% 65% / 0.1) 0%, transparent 50%),
+                      radial-gradient(circle at 75% 75%, hsl(25 95% 60% / 0.1) 0%, transparent 50%);
+  }
+
+  .dark {
+    color-scheme: dark;
+  }
+
+  /* Typography */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-oswald font-semibold;
+  }
+
+  .text-gold {
+    @apply text-primary;
+  }
+
+  .text-gold-light {
+    @apply text-primary-glow;
+  }
+
+  /* CrossFit Animations */
+  .pulse-gold {
+    animation: pulse-gold 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  @keyframes pulse-gold {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  .glow {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+  }
+
+  .glow-intense {
+    box-shadow: 0 0 40px hsl(var(--primary) / 0.7);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--primary));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary-glow));
   }
 }
