@@ -233,18 +233,18 @@ export function Dashboard() {
           <div className="text-center space-y-4 py-8">
             <div className="flex items-center justify-center gap-4 mb-4">
               <div 
-                className="w-16 h-16 bg-cover bg-center rounded-full border-2 border-primary glow"
+                className="w-12 h-12 bg-cover bg-center rounded-full border-2 border-primary glow"
                 style={{ backgroundImage: `url(${deadliftSilhouette})` }}
               />
-              <h1 className="text-5xl font-oswald font-bold bg-gradient-hero bg-clip-text text-transparent">
-                CROSSFIT TRACKER
+              <h1 className="text-4xl md:text-5xl font-oswald font-bold bg-gradient-hero bg-clip-text text-transparent">
+                EVOLUTION TRACKER
               </h1>
               <div 
-                className="w-16 h-16 bg-cover bg-center rounded-full border-2 border-primary glow"
+                className="w-12 h-12 bg-cover bg-center rounded-full border-2 border-primary glow"
                 style={{ backgroundImage: `url(${deadliftSilhouette})` }}
               />
             </div>
-            <p className="text-gold-light text-lg font-rajdhani font-medium">
+            <p className="text-gold-light text-base md:text-lg font-rajdhani font-medium">
               TRANSFORME SEU CORPO • SUPERE SEUS LIMITES • ALCANCE SUAS METAS
             </p>
           </div>
@@ -283,8 +283,8 @@ export function Dashboard() {
             </AlertDialog>
           </div>
 
-          {/* Metrics Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          {/* Metrics Grid - Mobile Optimized */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
             {(Object.keys(metricLabels) as MetricType[]).map((type) => (
               <MetricCard
                 key={type}
@@ -300,11 +300,12 @@ export function Dashboard() {
             ))}
           </div>
 
-          {/* Action Cards */}
+          {/* Action Cards - Below Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AddMetricForm onAddMetric={addMetric} />
             <GoalForm onAddGoal={addGoal} currentValues={currentValues} />
           </div>
+
 
           {/* Charts Section */}
           <div className="space-y-6">

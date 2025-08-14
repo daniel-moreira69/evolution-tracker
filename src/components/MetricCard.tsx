@@ -1,3 +1,4 @@
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
@@ -52,36 +53,36 @@ export function MetricCard({
 
   return (
     <Card className="overflow-hidden bg-gradient-dark border-border/50 shadow-intense hover:shadow-glow transition-all duration-300 hover:scale-105">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2 px-3 pt-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-sm font-medium text-gold-light font-rajdhani font-semibold">
+          <CardTitle className="text-xs font-medium text-gold-light font-rajdhani font-semibold">
             {title}
           </CardTitle>
-          <div className={`rounded-full p-2 bg-gradient-to-br ${color} glow`}>
-            {icon}
+          <div className={`rounded-full p-1.5 bg-gradient-to-br ${color} glow`}>
+            {React.cloneElement(icon as React.ReactElement, { className: "h-3 w-3 text-white" })}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-2">
+      <CardContent className="pt-0 px-3 pb-3">
+        <div className="space-y-1">
           <div className="flex items-baseline gap-1">
-            <span className="text-2xl font-bold text-primary font-oswald">
+            <span className="text-lg md:text-xl font-bold text-primary font-oswald">
               {displayValue}
             </span>
-            <span className="text-sm text-gold-light font-rajdhani">{unit}</span>
-            {change !== null && (
-              <span className={`text-xs flex items-center gap-1 font-rajdhani font-medium ${changeColor}`}>
-                {change > 0 ? (
-                  <TrendingUp className="h-3 w-3" />
-                ) : change < 0 ? (
-                  <TrendingDown className="h-3 w-3" />
-                ) : (
-                  <Minus className="h-3 w-3" />
-                )}
-                {Math.abs(change).toFixed(1)}{unit}
-              </span>
-            )}
+            <span className="text-xs text-gold-light font-rajdhani">{unit}</span>
           </div>
+          {change !== null && (
+            <div className={`text-xs flex items-center gap-1 font-rajdhani font-medium ${changeColor}`}>
+              {change > 0 ? (
+                <TrendingUp className="h-2.5 w-2.5" />
+              ) : change < 0 ? (
+                <TrendingDown className="h-2.5 w-2.5" />
+              ) : (
+                <Minus className="h-2.5 w-2.5" />
+              )}
+              {Math.abs(change).toFixed(1)}{unit}
+            </div>
+          )}
           
           {goal && (
             <GoalBreakdown goal={goal} onUpdate={() => {}} />
