@@ -1,5 +1,5 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { HealthMetric, MetricType } from '@/types/health';
+import { HealthMetric, MetricType, Goal } from '@/types/health';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
@@ -9,16 +9,21 @@ interface MetricChartProps {
   title: string;
   unit: string;
   color: string;
+  goal?: Goal;
 }
 
 const chartConfig = {
   value: {
-    label: "Valor",
+    label: "Valor Real",
     color: "hsl(var(--primary))",
+  },
+  goal: {
+    label: "Meta",
+    color: "hsl(var(--warning))",
   },
 }
 
-export function MetricChart({ metrics, type, title, unit, color }: MetricChartProps) {
+export function MetricChart({ metrics, type, title, unit, color, goal }: MetricChartProps) {
   const data = metrics
     .filter(metric => metric[type] !== undefined)
     .slice(-10) // Last 10 measurements
@@ -29,6 +34,7 @@ export function MetricChart({ metrics, type, title, unit, color }: MetricChartPr
         month: '2-digit'
       }),
       value: metric[type],
+      goal: goal?.targetValue || null,
       fullDate: metric.date.toLocaleDateString('pt-BR')
     }));
 
@@ -77,7 +83,10 @@ export function MetricChart({ metrics, type, title, unit, color }: MetricChartPr
                 content={
                   <ChartTooltipContent 
                     labelFormatter={(label, payload) => payload?.[0]?.payload?.fullDate}
-                    formatter={(value) => [`${Number(value).toFixed(1)}${unit}`, title]}
+                    formatter={(value, name) => [
+                      `${Number(value).toFixed(1)}${unit}`, 
+                      name === 'value' ? 'Valor Real' : 'Meta'
+                    ]}
                   />
                 }
               />
@@ -99,6 +108,22 @@ export function MetricChart({ metrics, type, title, unit, color }: MetricChartPr
                   strokeWidth: 2
                 }}
               />
+              {goal && (
+                <Line 
+                  type="monotone" 
+                  dataKey="goal" 
+                  stroke="hsl(var(--warning))"
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                  dot={false}
+                  activeDot={{ 
+                    r: 4, 
+                    fill: 'hsl(var(--warning))',
+                    stroke: 'hsl(var(--background))',
+                    strokeWidth: 2
+                  }}
+                />
+              )}
             </LineChart>
           </ResponsiveContainer>
         </ChartContainer>

@@ -1,9 +1,9 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { Goal, HealthMetric } from "@/types/health";
-import { GoalBreakdown } from "./GoalBreakdown";
 
 interface MetricCardProps {
   title: string;
@@ -14,6 +14,7 @@ interface MetricCardProps {
   previousMetric?: HealthMetric;
   icon: React.ReactNode;
   color: string;
+  metricType: string;
 }
 
 export function MetricCard({ 
@@ -24,8 +25,10 @@ export function MetricCard({
   lastMetric, 
   previousMetric, 
   icon, 
-  color 
+  color,
+  metricType
 }: MetricCardProps) {
+  const navigate = useNavigate();
   const displayValue = value ? value.toFixed(1) : '--';
   
   // Calculate change from previous measurement
@@ -51,8 +54,15 @@ export function MetricCard({
     change > 0 ? 'text-success' : 
     change < 0 ? 'text-destructive' : 'text-muted-foreground';
 
+  const handleClick = () => {
+    navigate(`/metric/${metricType}`);
+  };
+
   return (
-    <Card className="overflow-hidden bg-gradient-dark border-border/50 shadow-intense hover:shadow-glow transition-all duration-300 hover:scale-105">
+    <Card 
+      className="overflow-hidden bg-gradient-dark border-border/50 shadow-intense hover:shadow-glow transition-all duration-300 hover:scale-105 cursor-pointer"
+      onClick={handleClick}
+    >
       <CardHeader className="pb-2 px-3 pt-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-xs font-medium text-gold-light font-rajdhani font-semibold">
@@ -85,7 +95,24 @@ export function MetricCard({
           )}
           
           {goal && (
-            <GoalBreakdown goal={goal} onUpdate={() => {}} />
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-muted-foreground font-rajdhani">Meta:</span>
+                <span className="text-primary font-rajdhani font-semibold">
+                  {goal.targetValue.toFixed(1)}{unit}
+                </span>
+              </div>
+              {goal.currentValue && (
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground font-rajdhani">Progresso:</span>
+                  <span className={`font-rajdhani font-semibold ${
+                    goal.currentValue >= goal.targetValue ? 'text-success' : 'text-warning'
+                  }`}>
+                    {((goal.currentValue / goal.targetValue) * 100).toFixed(0)}%
+                  </span>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </CardContent>

@@ -296,6 +296,7 @@ export function Dashboard() {
                 previousMetric={previousMetric}
                 icon={metricIcons[type]}
                 color={metricColors[type]}
+                metricType={type}
               />
             ))}
           </div>
@@ -333,6 +334,7 @@ export function Dashboard() {
                     title={metricLabels[type].label}
                     unit={metricLabels[type].unit}
                     color={metricColors[type]}
+                    goal={getMetricGoal(type)}
                   />
                 ))}
               </div>
