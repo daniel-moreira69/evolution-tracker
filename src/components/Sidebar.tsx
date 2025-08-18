@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
+import bicepsIcon from "@/assets/biceps-icon.png";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -54,8 +55,8 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Header */}
       <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-            <Activity className="h-4 w-4 text-background" />
+          <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center">
+            <img src={bicepsIcon} alt="Evolution Tracker" className="w-8 h-8 filter brightness-0 invert" />
           </div>
           {!collapsed && (
             <div>

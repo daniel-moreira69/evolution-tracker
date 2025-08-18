@@ -1,4 +1,4 @@
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Goal } from '@/types/health';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
@@ -65,7 +65,7 @@ export function GoalProgressChart({ goals }: GoalProgressChartProps) {
       <CardContent>
         <ChartContainer config={chartConfig} className="h-48">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
+            <LineChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 5 }}>
               <CartesianGrid 
                 strokeDasharray="3 3" 
                 stroke="hsl(var(--border))" 
@@ -98,19 +98,39 @@ export function GoalProgressChart({ goals }: GoalProgressChartProps) {
                   />
                 }
               />
-              <Bar 
+              <Line 
+                type="monotone"
                 dataKey="current" 
-                fill="hsl(var(--primary))"
-                radius={[2, 2, 0, 0]}
-                opacity={0.8}
+                stroke="hsl(var(--primary))"
+                strokeWidth={3}
+                dot={{ 
+                  fill: 'hsl(var(--primary))', 
+                  strokeWidth: 2, 
+                  stroke: 'hsl(var(--background))',
+                  r: 4
+                }}
+                activeDot={{ 
+                  r: 6, 
+                  fill: 'hsl(var(--primary-glow))',
+                  stroke: 'hsl(var(--background))',
+                  strokeWidth: 2
+                }}
               />
-              <Bar 
+              <Line 
+                type="monotone"
                 dataKey="target" 
-                fill="hsl(var(--accent))"
-                radius={[2, 2, 0, 0]}
-                opacity={0.6}
+                stroke="hsl(var(--accent))"
+                strokeWidth={2}
+                strokeDasharray="5 5"
+                dot={false}
+                activeDot={{ 
+                  r: 4, 
+                  fill: 'hsl(var(--accent))',
+                  stroke: 'hsl(var(--background))',
+                  strokeWidth: 2
+                }}
               />
-            </BarChart>
+            </LineChart>
           </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
