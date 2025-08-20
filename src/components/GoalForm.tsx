@@ -3,9 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Goal, MetricType } from "@/types/health";
-import { Target } from "lucide-react";
+import { goalSchema, sanitizeNumericInput, formatValidationError } from "@/utils/validation";
+import { Target, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
 
 interface GoalFormProps {
   onAddGoal: (goal: Omit<Goal, 'id' | 'weeklyGoals' | 'monthlyGoals'>) => void;
@@ -27,26 +30,58 @@ export function GoalForm({ onAddGoal, currentValues }: GoalFormProps) {
     targetValue: '',
     targetDate: ''
   });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setErrors({});
     
-    if (!formData.type || !formData.targetValue || !formData.targetDate) return;
+    try {
+      if (!formData.type || !formData.targetValue || !formData.targetDate) {
+        throw new Error('Todos os campos são obrigatórios');
+      }
+      
+      const goal = {
+        type: formData.type,
+        targetValue: parseFloat(sanitizeNumericInput(formData.targetValue)),
+        targetDate: new Date(formData.targetDate),
+        currentValue: currentValues[formData.type]
+      };
+      
+      // Validate the goal data
+      const validatedGoal = goalSchema.parse(goal);
+      
+      onAddGoal(validatedGoal as Omit<Goal, 'id' | 'weeklyGoals' | 'monthlyGoals'>);
+      setIsOpen(false);
+      setFormData({
+        type: '' as MetricType,
+        targetValue: '',
+        targetDate: ''
+      });
+      toast.success('Meta criada com sucesso!');
+    } catch (error: any) {
+      if (error.name === 'ZodError') {
+        const formattedErrors = formatValidationError(error);
+        setErrors(formattedErrors);
+        toast.error('Verifique os dados da meta');
+      } else {
+        toast.error(error.message || 'Erro ao criar meta');
+        console.error('Failed to add goal:', error);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
     
-    const goal = {
-      type: formData.type,
-      targetValue: parseFloat(formData.targetValue),
-      targetDate: new Date(formData.targetDate),
-      currentValue: currentValues[formData.type]
-    };
-    
-    onAddGoal(goal);
-    setIsOpen(false);
-    setFormData({
-      type: '' as MetricType,
-      targetValue: '',
-      targetDate: ''
-    });
+    setFormData({ ...formData, [field]: value });
   };
 
   if (!isOpen) {
@@ -68,10 +103,19 @@ export function GoalForm({ onAddGoal, currentValues }: GoalFormProps) {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
+          {Object.keys(errors).length > 0 && (
+            <Alert className="border-destructive/50 text-destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                {Object.values(errors)[0]}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div>
             <Label htmlFor="type">Métrica</Label>
-            <Select value={formData.type} onValueChange={(value: MetricType) => setFormData({ ...formData, type: value })}>
-              <SelectTrigger>
+            <Select value={formData.type} onValueChange={(value: MetricType) => handleInputChange('type', value)}>
+              <SelectTrigger className={errors.type ? 'border-destructive' : ''}>
                 <SelectValue placeholder="Selecione uma métrica" />
               </SelectTrigger>
               <SelectContent>
@@ -80,6 +124,7 @@ export function GoalForm({ onAddGoal, currentValues }: GoalFormProps) {
                 ))}
               </SelectContent>
             </Select>
+            {errors.type && <p className="text-sm text-destructive mt-1">{errors.type}</p>}
           </div>
           
           {formData.type && currentValues[formData.type] && (
@@ -92,13 +137,15 @@ export function GoalForm({ onAddGoal, currentValues }: GoalFormProps) {
             <Label htmlFor="targetValue">Valor da Meta</Label>
             <Input
               id="targetValue"
-              type="number"
-              step="0.1"
+              type="text"
+              inputMode="decimal"
               placeholder="Ex: 75.0"
               value={formData.targetValue}
-              onChange={(e) => setFormData({ ...formData, targetValue: e.target.value })}
+              onChange={(e) => handleInputChange('targetValue', sanitizeNumericInput(e.target.value))}
+              className={errors.targetValue ? 'border-destructive' : ''}
               required
             />
+            {errors.targetValue && <p className="text-sm text-destructive mt-1">{errors.targetValue}</p>}
           </div>
           
           <div>
@@ -107,17 +154,20 @@ export function GoalForm({ onAddGoal, currentValues }: GoalFormProps) {
               id="targetDate"
               type="date"
               value={formData.targetDate}
-              onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
+              onChange={(e) => handleInputChange('targetDate', e.target.value)}
               min={new Date().toISOString().split('T')[0]}
+              max={new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]}
+              className={errors.targetDate ? 'border-destructive' : ''}
               required
             />
+            {errors.targetDate && <p className="text-sm text-destructive mt-1">{errors.targetDate}</p>}
           </div>
           
           <div className="flex gap-2 pt-4">
-            <Button type="submit" className="bg-gradient-accent">
-              Criar Meta
+            <Button type="submit" className="bg-gradient-accent" disabled={isSubmitting}>
+              {isSubmitting ? 'Criando...' : 'Criar Meta'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
           </div>

@@ -6,9 +6,11 @@ import { MetricChart } from "./MetricChart";
 import { GoalProgressChart } from "./GoalProgressChart";
 import { HealthMetric, Goal, MetricType } from "@/types/health";
 import { calculateIntermediateGoals, updateGoalProgress } from "@/utils/goalCalculator";
-import { Weight, Dumbbell, Zap, Activity, Target, TrendingUp, BarChart3 } from "lucide-react";
+import { SecureStorage, DataRetentionManager } from "@/utils/secureStorage";
+import { Weight, Dumbbell, Zap, Activity, Target, TrendingUp, BarChart3, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { GoalsPanel } from "./GoalsPanel";
 import crossfitBg from "@/assets/crossfit-bg.jpg";
@@ -43,41 +45,60 @@ export function Dashboard() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load data from localStorage on component mount
+  // Load data from secure storage on component mount
   useEffect(() => {
-    const savedMetrics = localStorage.getItem('healthMetrics');
-    const savedGoals = localStorage.getItem('healthGoals');
-    
-    if (savedMetrics) {
-      const parsedMetrics = JSON.parse(savedMetrics);
-      setMetrics(parsedMetrics.map((m: any) => ({
-        ...m,
-        date: new Date(m.date)
-      })));
-    }
-    
-    if (savedGoals) {
-      const parsedGoals = JSON.parse(savedGoals);
-      setGoals(parsedGoals.map((g: any) => ({
-        ...g,
-        targetDate: new Date(g.targetDate),
-        weeklyGoals: g.weeklyGoals?.map((w: any) => ({
-          ...w,
-          weekStart: new Date(w.weekStart),
-          weekEnd: new Date(w.weekEnd)
-        })) || [],
-        monthlyGoals: g.monthlyGoals || []
-      })));
+    try {
+      const savedMetrics = SecureStorage.getItem('healthMetrics');
+      const savedGoals = SecureStorage.getItem('healthGoals');
+      
+      if (savedMetrics && Array.isArray(savedMetrics)) {
+        const parsedMetrics = savedMetrics.map((m: any) => ({
+          ...m,
+          date: new Date(m.date)
+        }));
+        setMetrics(parsedMetrics);
+      }
+      
+      if (savedGoals && Array.isArray(savedGoals)) {
+        const parsedGoals = savedGoals.map((g: any) => ({
+          ...g,
+          targetDate: new Date(g.targetDate),
+          weeklyGoals: g.weeklyGoals?.map((w: any) => ({
+            ...w,
+            weekStart: new Date(w.weekStart),
+            weekEnd: new Date(w.weekEnd)
+          })) || [],
+          monthlyGoals: g.monthlyGoals || []
+        }));
+        setGoals(parsedGoals);
+      }
+      
+      // Run data cleanup on app load
+      const { metricsRemoved, goalsRemoved } = DataRetentionManager.cleanupOldData();
+      if (metricsRemoved > 0 || goalsRemoved > 0) {
+        toast.info(`Dados antigos removidos: ${metricsRemoved} medições, ${goalsRemoved} metas`);
+      }
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      toast.error('Erro ao carregar dados salvos');
     }
   }, []);
 
-  // Save data to localStorage whenever metrics or goals change
+  // Save data to secure storage whenever metrics or goals change
   useEffect(() => {
-    localStorage.setItem('healthMetrics', JSON.stringify(metrics));
+    try {
+      SecureStorage.setItem('healthMetrics', metrics);
+    } catch (error) {
+      console.error('Failed to save metrics:', error);
+    }
   }, [metrics]);
 
   useEffect(() => {
-    localStorage.setItem('healthGoals', JSON.stringify(goals));
+    try {
+      SecureStorage.setItem('healthGoals', goals);
+    } catch (error) {
+      console.error('Failed to save goals:', error);
+    }
   }, [goals]);
 
   const addMetric = (metricData: Omit<HealthMetric, 'id'>) => {
@@ -178,11 +199,49 @@ export function Dashboard() {
   };
 
   const clearData = () => {
-    localStorage.removeItem('healthMetrics');
-    localStorage.removeItem('healthGoals');
-    setMetrics([]);
-    setGoals([]);
-    toast.success('Dados limpos.');
+    try {
+      SecureStorage.clear();
+      setMetrics([]);
+      setGoals([]);
+      toast.success('Dados limpos com segurança.');
+    } catch (error) {
+      console.error('Failed to clear data:', error);
+      toast.error('Erro ao limpar dados');
+    }
+  };
+
+  const cleanupOldData = () => {
+    try {
+      const { metricsRemoved, goalsRemoved } = DataRetentionManager.cleanupOldData();
+      if (metricsRemoved > 0 || goalsRemoved > 0) {
+        // Reload data after cleanup
+        const updatedMetrics = SecureStorage.getItem('healthMetrics') || [];
+        const updatedGoals = SecureStorage.getItem('healthGoals') || [];
+        
+        setMetrics(updatedMetrics.map((m: any) => ({
+          ...m,
+          date: new Date(m.date)
+        })));
+        
+        setGoals(updatedGoals.map((g: any) => ({
+          ...g,
+          targetDate: new Date(g.targetDate),
+          weeklyGoals: g.weeklyGoals?.map((w: any) => ({
+            ...w,
+            weekStart: new Date(w.weekStart),
+            weekEnd: new Date(w.weekEnd)
+          })) || [],
+          monthlyGoals: g.monthlyGoals || []
+        })));
+        
+        toast.success(`Dados antigos removidos: ${metricsRemoved} medições, ${goalsRemoved} metas`);
+      } else {
+        toast.info('Nenhum dado antigo encontrado para remoção');
+      }
+    } catch (error) {
+      console.error('Failed to cleanup data:', error);
+      toast.error('Erro ao limpar dados antigos');
+    }
   };
 
   const onUpdateGoal = (updated: Goal) => {
@@ -257,6 +316,10 @@ export function Dashboard() {
             <Button variant="outline" onClick={onImportClick} className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
               Importar dados
             </Button>
+            <Button variant="outline" onClick={cleanupOldData} className="border-warning text-warning hover:bg-warning hover:text-warning-foreground">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Limpar dados antigos
+            </Button>
             <input
               ref={fileInputRef}
               type="file"
@@ -266,13 +329,14 @@ export function Dashboard() {
             />
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" className="shadow-glow">Limpar dados</Button>
+                <Button variant="destructive" className="shadow-glow">Limpar todos os dados</Button>
               </AlertDialogTrigger>
               <AlertDialogContent className="bg-card border-border">
                 <AlertDialogHeader>
                   <AlertDialogTitle className="text-primary font-oswald">Tem certeza que deseja limpar?</AlertDialogTitle>
                   <AlertDialogDescription className="text-muted-foreground">
                     Essa ação removerá todas as medições e metas salvas neste dispositivo. Não poderá ser desfeita.
+                    Os dados são armazenados com criptografia para sua segurança.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -282,6 +346,35 @@ export function Dashboard() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
+
+          {/* Security & Privacy Info */}
+          <Card className="bg-gradient-dark border-border/50 shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-primary font-oswald flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                SEGURANÇA & PRIVACIDADE
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Seus dados são protegidos com criptografia local
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <div className="text-center p-3 bg-muted/20 rounded-lg">
+                  <div className="text-success font-semibold">Criptografia AES</div>
+                  <div className="text-muted-foreground">Dados protegidos localmente</div>
+                </div>
+                <div className="text-center p-3 bg-muted/20 rounded-lg">
+                  <div className="text-accent font-semibold">Validação de Entrada</div>
+                  <div className="text-muted-foreground">Ranges seguros validados</div>
+                </div>
+                <div className="text-center p-3 bg-muted/20 rounded-lg">
+                  <div className="text-warning font-semibold">Limpeza Automática</div>
+                  <div className="text-muted-foreground">Dados antigos removidos</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Metrics Grid - Mobile Optimized */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
