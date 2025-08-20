@@ -320,8 +320,6 @@ export function Dashboard() {
               </p>
             </div>
 
-            {/* Goal Progress Chart */}
-            <GoalProgressChart goals={goals} />
 
             {/* Individual Metric Charts */}
             {metrics.length > 1 && (
