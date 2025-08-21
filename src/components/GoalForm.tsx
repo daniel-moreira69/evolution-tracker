@@ -7,12 +7,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Goal, MetricType } from "@/types/health";
 import { goalSchema, sanitizeNumericInput, formatValidationError } from "@/utils/validation";
-import { Target, AlertTriangle } from "lucide-react";
+import { criarMetaComBreakdownMensal } from "@/utils/monthlyGoalCalculator";
+import { Target, AlertTriangle, User } from "lucide-react";
 import { toast } from "sonner";
 
 interface GoalFormProps {
   onAddGoal: (goal: Omit<Goal, 'id' | 'weeklyGoals' | 'monthlyGoals'>) => void;
   currentValues: Record<MetricType, number | undefined>;
+}
+
+interface BodyCompositionData {
+  height: number; // cm
+  weight: number;
+  muscleMass: number;
+  fatMass: number;
+  fatPercentage: number;
 }
 
 const metricLabels: Record<MetricType, string> = {
@@ -28,10 +37,12 @@ export function GoalForm({ onAddGoal, currentValues }: GoalFormProps) {
   const [formData, setFormData] = useState({
     type: '' as MetricType,
     targetValue: '',
-    targetDate: ''
+    targetDate: '',
+    height: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,14 +64,48 @@ export function GoalForm({ onAddGoal, currentValues }: GoalFormProps) {
       // Validate the goal data
       const validatedGoal = goalSchema.parse(goal);
       
-      onAddGoal(validatedGoal as Omit<Goal, 'id' | 'weeklyGoals' | 'monthlyGoals'>);
+      // Create monthly breakdown using the new calculation system
+      let bodyData: BodyCompositionData | undefined;
+      if (formData.height && currentValues.weight && currentValues.muscleMass && 
+          currentValues.fatMass && currentValues.fatPercentage) {
+        bodyData = {
+          height: parseFloat(sanitizeNumericInput(formData.height)),
+          weight: currentValues.weight,
+          muscleMass: currentValues.muscleMass,
+          fatMass: currentValues.fatMass,
+          fatPercentage: currentValues.fatPercentage
+        };
+      }
+
+      const currentValuesWithHeight = {
+        ...currentValues,
+        height: bodyData?.height
+      };
+
+      const { monthlyGoals } = criarMetaComBreakdownMensal(
+        formData.type,
+        parseFloat(sanitizeNumericInput(formData.targetValue)),
+        new Date(formData.targetDate),
+        currentValuesWithHeight
+      );
+      
+      // Create goal with monthly breakdown
+      const goalWithBreakdown = {
+        ...validatedGoal,
+        monthlyGoals,
+        weeklyGoals: [] // Keep empty for now, focusing on monthly goals
+      };
+      
+      onAddGoal(goalWithBreakdown as any);
       setIsOpen(false);
       setFormData({
         type: '' as MetricType,
         targetValue: '',
-        targetDate: ''
+        targetDate: '',
+        height: ''
       });
-      toast.success('Meta criada com sucesso!');
+      setShowAdvancedOptions(false);
+      toast.success('Meta criada com breakdown mensal!');
     } catch (error: any) {
       if (error.name === 'ZodError') {
         const formattedErrors = formatValidationError(error);
@@ -132,6 +177,49 @@ export function GoalForm({ onAddGoal, currentValues }: GoalFormProps) {
               Valor atual: {currentValues[formData.type]?.toFixed(1)} {formData.type === 'weight' || formData.type === 'muscleMass' || formData.type === 'fatMass' ? 'kg' : formData.type === 'fatPercentage' ? '%' : ''}
             </div>
           )}
+
+          {/* Advanced Options Toggle */}
+          <div className="border-t pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+              className="w-full mb-3"
+            >
+              <User className="h-4 w-4 mr-2" />
+              {showAdvancedOptions ? 'Ocultar' : 'Mostrar'} Dados Corporais (Cálculo Avançado)
+            </Button>
+            
+            {showAdvancedOptions && (
+              <div className="space-y-3 p-3 bg-muted/20 rounded-lg">
+                <p className="text-xs text-muted-foreground">
+                  Para cálculo mais preciso das metas mensais, forneça sua altura. 
+                  Será usado junto com seus dados corporais atuais.
+                </p>
+                <div>
+                  <Label htmlFor="height">Altura (cm)</Label>
+                  <Input
+                    id="height"
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Ex: 175"
+                    value={formData.height}
+                    onChange={(e) => handleInputChange('height', sanitizeNumericInput(e.target.value))}
+                    className={errors.height ? 'border-destructive' : ''}
+                  />
+                  {errors.height && <p className="text-sm text-destructive mt-1">{errors.height}</p>}
+                </div>
+                
+                {formData.height && currentValues.weight && currentValues.muscleMass && 
+                 currentValues.fatMass && currentValues.fatPercentage && (
+                  <div className="text-xs text-success bg-success/10 p-2 rounded">
+                    ✓ Cálculo avançado ativado: distribuição otimizada entre perda de gordura (85%) e preservação muscular (15%)
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           
           <div>
             <Label htmlFor="targetValue">Valor da Meta</Label>

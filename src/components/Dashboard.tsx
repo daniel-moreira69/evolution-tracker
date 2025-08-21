@@ -6,6 +6,7 @@ import { MetricChart } from "./MetricChart";
 import { GoalProgressChart } from "./GoalProgressChart";
 import { HealthMetric, Goal, MetricType } from "@/types/health";
 import { calculateIntermediateGoals, updateGoalProgress } from "@/utils/goalCalculator";
+import { criarMetaComBreakdownMensal } from "@/utils/monthlyGoalCalculator";
 import { SecureStorage, DataRetentionManager } from "@/utils/secureStorage";
 import { Weight, Dumbbell, Zap, Activity, Target, TrendingUp, BarChart3, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -122,16 +123,10 @@ export function Dashboard() {
     setGoals(updatedGoals);
   };
 
-  const addGoal = (goalData: Omit<Goal, 'id' | 'weeklyGoals' | 'monthlyGoals'>) => {
-    const currentValues = getCurrentValues();
-    const base = { ...goalData, currentValue: currentValues[goalData.type] } as Goal;
-    const { weeklyGoals, monthlyGoals } = calculateIntermediateGoals(base);
-    
+  const addGoal = (goalData: Omit<Goal, 'id'>) => {
     const newGoal: Goal = {
       ...goalData,
-      id: Date.now().toString(),
-      weeklyGoals,
-      monthlyGoals
+      id: Date.now().toString()
     };
     
     setGoals(prev => {
@@ -473,6 +468,18 @@ export function Dashboard() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+      
+      {/* Security Message Box at Bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-primary/90 to-accent/90 backdrop-blur-sm border-t border-border/50 shadow-intense z-10">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-center gap-3 text-white">
+            <Shield className="h-5 w-5 text-gold" />
+            <p className="text-sm font-rajdhani font-medium text-center">
+              🔒 Seus dados estão protegidos com criptografia AES-256 e armazenados localmente no seu dispositivo
+            </p>
+          </div>
         </div>
       </div>
     </div>
