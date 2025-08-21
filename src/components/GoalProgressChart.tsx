@@ -3,23 +3,25 @@ import { Goal } from '@/types/health';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Target, TrendingUp } from 'lucide-react';
+import { calcularMetasMensais } from '@/utils/monthlyGoalCalculator';
 
 interface GoalProgressChartProps {
   goals: Goal[];
+  currentMetrics?: any;
 }
 
 const chartConfig = {
-  current: {
-    label: "Atual",
+  realizado: {
+    label: "Realizado",
     color: "hsl(var(--primary))",
   },
-  target: {
+  meta: {
     label: "Meta",
     color: "hsl(var(--accent))",
   },
 }
 
-export function GoalProgressChart({ goals }: GoalProgressChartProps) {
+export function GoalProgressChart({ goals, currentMetrics }: GoalProgressChartProps) {
   const activeGoals = goals.filter(goal => goal.currentValue !== undefined && goal.targetValue !== undefined);
 
   if (activeGoals.length === 0) {
@@ -28,38 +30,61 @@ export function GoalProgressChart({ goals }: GoalProgressChartProps) {
         <CardHeader className="pb-2">
           <CardTitle className="text-primary font-oswald text-lg flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Progresso das Metas
+            Progresso das Metas Mensais
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-48 text-muted-foreground">
-            <p className="text-sm">Defina suas metas para ver o progresso</p>
+            <p className="text-sm">Defina suas metas para ver o progresso mensal</p>
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  const data = activeGoals.map(goal => {
-    // Simple progress calculation based on current value and target
-    const progress = goal.currentValue !== undefined ? 
-      (goal.currentValue / goal.targetValue) * 100 : 0;
-    
-    return {
-      name: getMetricLabel(goal.type),
-      current: goal.currentValue,
-      target: goal.targetValue,
-      progress: Math.min(Math.max(progress, 0), 100),
-      unit: getMetricUnit(goal.type)
-    };
-  });
+  // Generate monthly breakdown for weight goals
+  const weightGoal = activeGoals.find(goal => goal.type === 'weight');
+  let monthlyData: any[] = [];
+
+  if (weightGoal && currentMetrics) {
+    try {
+      const monthlyBreakdown = calcularMetasMensais({
+        pesoAtual: currentMetrics.weight || weightGoal.currentValue,
+        pesoMeta: weightGoal.targetValue,
+        dataAlvo: typeof weightGoal.targetDate === 'string' 
+          ? weightGoal.targetDate 
+          : weightGoal.targetDate?.toISOString().split('T')[0] || new Date(Date.now() + 12 * 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        altura: currentMetrics.height || 175,
+        massaMuscular: currentMetrics.muscleMass || 45,
+        massaGordura: currentMetrics.fatMass || 30,
+        percentualGordura: currentMetrics.fatPercentage || 25
+      });
+
+      monthlyData = monthlyBreakdown.map((breakdown, index) => ({
+        mes: `Mês ${index}`,
+        meta: breakdown.peso,
+        realizado: index === 0 ? (currentMetrics.weight || weightGoal.currentValue) : null, // Only show current for month 0
+        unit: 'kg'
+      }));
+    } catch (error) {
+      console.warn('Erro ao calcular metas mensais:', error);
+    }
+  }
+
+  // Fallback to simple data if monthly calculation fails
+  const data = monthlyData.length > 0 ? monthlyData : activeGoals.map(goal => ({
+    mes: getMetricLabel(goal.type),
+    meta: goal.targetValue,
+    realizado: goal.currentValue,
+    unit: getMetricUnit(goal.type)
+  }));
 
   return (
     <Card className="bg-gradient-dark border-border/50 shadow-intense">
       <CardHeader className="pb-2">
         <CardTitle className="text-primary font-oswald text-lg flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          Progresso das Metas
+          Progresso das Metas Mensais
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -72,7 +97,7 @@ export function GoalProgressChart({ goals }: GoalProgressChartProps) {
                 strokeOpacity={0.3}
               />
               <XAxis 
-                dataKey="name" 
+                dataKey="mes" 
                 axisLine={false}
                 tickLine={false}
                 tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -87,10 +112,10 @@ export function GoalProgressChart({ goals }: GoalProgressChartProps) {
                   <ChartTooltipContent 
                     formatter={(value, name, props) => {
                       const unit = props.payload?.unit || '';
-                      if (name === 'current') {
-                        return [`${Number(value).toFixed(1)}${unit}`, 'Atual'];
+                      if (name === 'realizado' && value !== null) {
+                        return [`${Number(value).toFixed(1)}${unit}`, 'Realizado'];
                       }
-                      if (name === 'target') {
+                      if (name === 'meta') {
                         return [`${Number(value).toFixed(1)}${unit}`, 'Meta'];
                       }
                       return [value, name];
@@ -100,9 +125,10 @@ export function GoalProgressChart({ goals }: GoalProgressChartProps) {
               />
               <Line 
                 type="monotone"
-                dataKey="current" 
+                dataKey="realizado" 
                 stroke="hsl(var(--primary))"
                 strokeWidth={3}
+                connectNulls={false}
                 dot={{ 
                   fill: 'hsl(var(--primary))', 
                   strokeWidth: 2, 
@@ -118,11 +144,16 @@ export function GoalProgressChart({ goals }: GoalProgressChartProps) {
               />
               <Line 
                 type="monotone"
-                dataKey="target" 
+                dataKey="meta" 
                 stroke="hsl(var(--accent))"
                 strokeWidth={2}
                 strokeDasharray="5 5"
-                dot={false}
+                dot={{ 
+                  fill: 'hsl(var(--accent))', 
+                  strokeWidth: 2, 
+                  stroke: 'hsl(var(--background))',
+                  r: 3
+                }}
                 activeDot={{ 
                   r: 4, 
                   fill: 'hsl(var(--accent))',

@@ -215,7 +215,7 @@ export default function Analysis() {
         </Card>
 
         {/* Goal Progress Chart */}
-        <GoalProgressChart goals={goals} />
+        <GoalProgressChart goals={goals} currentMetrics={getLatestMetric('weight')} />
 
         {/* Individual Metric Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

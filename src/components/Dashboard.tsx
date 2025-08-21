@@ -469,6 +469,9 @@ export function Dashboard() {
             </div>
           )}
         </div>
+      
+      {/* Add bottom padding to prevent content overlap with fixed security box */}
+      <div className="pb-20"></div>
       </div>
       
       {/* Security Message Box at Bottom */}
