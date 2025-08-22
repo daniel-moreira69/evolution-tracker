@@ -416,6 +416,7 @@ export function Dashboard() {
                   <MetricChart
                     key={type}
                     metrics={metrics}
+                    goals={goals}
                     type={type}
                     title={metricLabels[type].label}
                     unit={metricLabels[type].unit}

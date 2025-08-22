@@ -225,6 +225,7 @@ export default function Analysis() {
               <MetricChart
                 key={type}
                 metrics={metrics}
+                goals={goals}
                 type={type as MetricType}
                 title={config.label}
                 unit={config.unit}
