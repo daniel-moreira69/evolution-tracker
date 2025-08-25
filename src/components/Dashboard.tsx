@@ -342,34 +342,6 @@ export function Dashboard() {
             </AlertDialog>
           </div>
 
-          {/* Security & Privacy Info */}
-          <Card className="bg-gradient-dark border-border/50 shadow-soft">
-            <CardHeader>
-              <CardTitle className="text-primary font-oswald flex items-center gap-2">
-                <Shield className="h-5 w-5" />
-                SEGURANÇA & PRIVACIDADE
-              </CardTitle>
-              <CardDescription className="text-muted-foreground">
-                Seus dados são protegidos com criptografia local
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                <div className="text-center p-3 bg-muted/20 rounded-lg">
-                  <div className="text-success font-semibold">Criptografia AES</div>
-                  <div className="text-muted-foreground">Dados protegidos localmente</div>
-                </div>
-                <div className="text-center p-3 bg-muted/20 rounded-lg">
-                  <div className="text-accent font-semibold">Validação de Entrada</div>
-                  <div className="text-muted-foreground">Ranges seguros validados</div>
-                </div>
-                <div className="text-center p-3 bg-muted/20 rounded-lg">
-                  <div className="text-warning font-semibold">Limpeza Automática</div>
-                  <div className="text-muted-foreground">Dados antigos removidos</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Metrics Grid - Mobile Optimized */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
@@ -469,21 +441,6 @@ export function Dashboard() {
               </div>
             </div>
           )}
-        </div>
-      
-      {/* Add bottom padding to prevent content overlap with fixed security box */}
-      <div className="pb-20"></div>
-      </div>
-      
-      {/* Security Message Box at Bottom */}
-      <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-primary/90 to-accent/90 backdrop-blur-sm border-t border-border/50 shadow-intense z-10">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-center gap-3 text-white">
-            <Shield className="h-5 w-5 text-gold" />
-            <p className="text-sm font-rajdhani font-medium text-center">
-              🔒 Seus dados estão protegidos com criptografia AES-256 e armazenados localmente no seu dispositivo
-            </p>
-          </div>
         </div>
       </div>
     </div>

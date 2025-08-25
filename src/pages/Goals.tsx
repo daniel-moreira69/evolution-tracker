@@ -5,10 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { GoalForm } from "@/components/GoalForm";
 import { GoalBreakdown } from "@/components/GoalBreakdown";
-import { Goal } from "@/types/health";
+import { GoalProgressLineChart } from "@/components/GoalProgressLineChart";
+import { Goal, HealthMetric } from "@/types/health";
 
 export default function Goals() {
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [metrics, setMetrics] = useState<HealthMetric[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
@@ -24,6 +26,15 @@ export default function Goals() {
           weekEnd: new Date(w.weekEnd)
         })) || [],
         monthlyGoals: g.monthlyGoals || []
+      })));
+    }
+
+    const savedMetrics = localStorage.getItem('healthMetrics');
+    if (savedMetrics) {
+      const parsedMetrics = JSON.parse(savedMetrics);
+      setMetrics(parsedMetrics.map((m: any) => ({
+        ...m,
+        date: new Date(m.date)
       })));
     }
   }, []);
@@ -81,6 +92,9 @@ export default function Goals() {
             Nova Meta
           </Button>
         </div>
+
+        {/* Line Chart for Goal Progress */}
+        <GoalProgressLineChart goals={goals} metrics={metrics} />
 
         {/* Add Goal Form */}
         {showAddForm && (
