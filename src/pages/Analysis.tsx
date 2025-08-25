@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { TrendingUp, Target, Activity, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MetricChart } from "@/components/MetricChart";
 import { GoalProgressChart } from "@/components/GoalProgressChart";
 import { HealthMetric, Goal, MetricType } from "@/types/health";
@@ -217,24 +218,33 @@ export default function Analysis() {
         {/* Goal Progress Chart */}
         <GoalProgressChart goals={goals} currentMetrics={getLatestMetric('weight')} />
 
-        {/* Individual Metric Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Metric Tabs */}
+        <Tabs defaultValue="weight" className="w-full">
+          <TabsList className="grid grid-cols-5 w-full">
+            {Object.entries(metricLabels).map(([type, config]) => (
+              <TabsTrigger key={type} value={type} className="text-xs">
+                {config.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
           {Object.entries(metricLabels).map(([type, config]) => {
             const goal = goals.find(g => g.type === type);
             return (
-              <MetricChart
-                key={type}
-                metrics={metrics}
-                goals={goals}
-                type={type as MetricType}
-                title={config.label}
-                unit={config.unit}
-                color={metricColors[type as MetricType]}
-                goal={goal}
-              />
+              <TabsContent key={type} value={type} className="mt-6">
+                <MetricChart
+                  metrics={metrics}
+                  goals={goals}
+                  type={type as MetricType}
+                  title={config.label}
+                  unit={config.unit}
+                  color={metricColors[type as MetricType]}
+                  goal={goal}
+                />
+              </TabsContent>
             );
           })}
-        </div>
+        </Tabs>
 
         {/* Insights Card */}
         {metrics.length > 0 && (

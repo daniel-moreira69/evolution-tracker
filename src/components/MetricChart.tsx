@@ -2,7 +2,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } fro
 import { HealthMetric, MetricType, Goal } from '@/types/health';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { MonthlyProgressChart } from './MonthlyProgressChart';
 
 interface MetricChartProps {
   metrics: HealthMetric[];
@@ -56,11 +55,9 @@ export function MetricChart({ metrics, goals, type, title, unit, color, goal }: 
   }
 
   return (
-    <div className="space-y-4">
-      {/* Historical Data Chart */}
-      <Card className="bg-gradient-dark border-border/50 shadow-intense">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-primary font-oswald text-lg">{title} - Histórico</CardTitle>
+    <Card className="bg-gradient-dark border-border/50 shadow-intense">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-primary font-oswald text-lg">{title}</CardTitle>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-32">
@@ -132,16 +129,6 @@ export function MetricChart({ metrics, goals, type, title, unit, color, goal }: 
             </ResponsiveContainer>
           </ChartContainer>
         </CardContent>
-      </Card>
-
-      {/* Monthly Progress Chart */}
-      <MonthlyProgressChart 
-        metrics={metrics}
-        goals={goals}
-        type={type}
-        title={title}
-        unit={unit}
-      />
-    </div>
+    </Card>
   );
 }
