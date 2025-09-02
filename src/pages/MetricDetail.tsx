@@ -102,6 +102,7 @@ export default function MetricDetail() {
             title={metric.label}
             unit={metric.unit}
             color={metricColors[type]}
+            goal={goal}
           />
           
           {goal && (
