@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { HealthMetric, Goal, MetricType } from "@/types/health";
-import { calcularMetasMensais } from "@/utils/monthlyGoalCalculator";
 import { useState, useEffect } from "react";
 
 const metricLabels = {
@@ -15,6 +14,70 @@ const metricLabels = {
   bmi: { label: "IMC", unit: "" },
   fatPercentage: { label: "% de Gordura", unit: "%" }
 };
+
+// Função para calcular metas mensais - exatamente como fornecido
+function calcularMetas(params: {
+  pesoAtual: number;
+  pesoMeta: number;
+  dataAlvo: string;
+  altura: number;
+  massaMuscular: number;
+  massaGordura: number;
+  percentualGordura: number;
+}) {
+  const {
+    pesoAtual,        // kg
+    pesoMeta,         // kg
+    dataAlvo,         // formato: "YYYY-MM-DD"
+    altura,           // cm
+    massaMuscular,    // kg
+    massaGordura,     // kg
+    percentualGordura // %
+  } = params;
+
+  // Converter altura para metros
+  const alturaM = altura / 100;
+
+  // Calcular tempo em meses
+  const hoje = new Date();
+  const alvo = new Date(dataAlvo);
+  const meses = Math.max(1, (alvo.getFullYear() - hoje.getFullYear()) * 12 + (alvo.getMonth() - hoje.getMonth()));
+
+  // Diferença de peso a perder
+  const perdaTotal = pesoAtual - pesoMeta;
+  const perdaPorMes = perdaTotal / meses;
+
+  // Distribuir perda entre gordura e músculo
+  // -> assume 85% da perda vinda de gordura, 15% de massa magra
+  const perdaGorduraTotal = perdaTotal * 0.85;
+  const perdaMusculoTotal = perdaTotal * 0.15;
+
+  const perdaGorduraMes = perdaGorduraTotal / meses;
+  const perdaMusculoMes = perdaMusculoTotal / meses;
+
+  // Array para armazenar evolução
+  const metas = [];
+
+  for (let i = 0; i <= meses; i++) {
+    const peso = pesoAtual - (perdaPorMes * i);
+    const gordura = massaGordura - (perdaGorduraMes * i);
+    const musculo = massaMuscular - (perdaMusculoMes * i);
+
+    const imc = peso / (alturaM * alturaM);
+    const percGordura = (gordura / peso) * 100;
+
+    metas.push({
+      mes: i,
+      peso: peso.toFixed(1),
+      massaMuscular: musculo.toFixed(1),
+      massaGordura: gordura.toFixed(1),
+      imc: imc.toFixed(1),
+      percentualGordura: percGordura.toFixed(1) + "%"
+    });
+  }
+
+  return metas;
+}
 
 const chartConfig = {
   measurement: {
@@ -53,93 +116,81 @@ export default function MetricDetail() {
       const parsedGoals = JSON.parse(savedGoals);
       setGoals(parsedGoals.map((g: any) => ({
         ...g,
-        targetDate: new Date(g.targetDate),
-        weeklyGoals: g.weeklyGoals?.map((w: any) => ({
-          ...w,
-          weekStart: new Date(w.weekStart),
-          weekEnd: new Date(w.weekEnd)
-        })) || [],
-        monthlyGoals: g.monthlyGoals || []
+        targetDate: new Date(g.targetDate)
       })));
     }
   }, []);
 
-  // Calcular dados do gráfico
+  // Preparar dados do gráfico
   const getChartData = () => {
     if (!goal || metrics.length === 0) return [];
 
-    // Obter a medição mais recente para usar como base
-    const latestMetric = metrics[metrics.length - 1];
-    
-    // Calcular metas mensais usando o script fornecido
-    const monthlyGoals = calcularMetasMensais({
-      pesoAtual: latestMetric.weight || 70,
+    // Obter medições mais recentes para usar como base no cálculo
+    const recentMetrics = metrics.slice(-10);
+    const latestMetric = recentMetrics[recentMetrics.length - 1];
+
+    // Usar valores padrão se não tiver dados completos
+    const metas = calcularMetas({
+      pesoAtual: latestMetric?.weight || 80,
       pesoMeta: goal.targetValue,
       dataAlvo: goal.targetDate.toISOString().split('T')[0],
-      altura: 175, // Valor padrão, idealmente vem do perfil do usuário
-      massaMuscular: latestMetric.muscleMass || 35,
-      massaGordura: latestMetric.fatMass || 25,
-      percentualGordura: latestMetric.fatPercentage || 20
+      altura: 175, // Valor padrão
+      massaMuscular: latestMetric?.muscleMass || 40,
+      massaGordura: latestMetric?.fatMass || 25,
+      percentualGordura: latestMetric?.fatPercentage || 25
     });
 
-    // Agrupar medições por mês
-    const measurementsByMonth = new Map<string, HealthMetric[]>();
+    // Agrupar medições por mês para usar a mais recente
+    const measurementsByMonth = new Map<string, HealthMetric>();
     
     metrics.forEach(metric => {
       if (metric[type] !== undefined) {
         const monthKey = `${metric.date.getFullYear()}-${String(metric.date.getMonth() + 1).padStart(2, '0')}`;
-        if (!measurementsByMonth.has(monthKey)) {
-          measurementsByMonth.set(monthKey, []);
+        const existing = measurementsByMonth.get(monthKey);
+        if (!existing || metric.date > existing.date) {
+          measurementsByMonth.set(monthKey, metric);
         }
-        measurementsByMonth.get(monthKey)!.push(metric);
       }
     });
 
     // Preparar dados para o gráfico
     const chartData = [];
     const today = new Date();
-    const startDate = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    for (let i = 0; i < monthlyGoals.length; i++) {
-      const monthDate = new Date(startDate.getFullYear(), startDate.getMonth() + i, 1);
+    for (let i = 0; i < metas.length; i++) {
+      const monthDate = new Date(today.getFullYear(), today.getMonth() + i, 1);
       const monthKey = `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`;
       const monthName = monthDate.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' });
       
-      // Obter a medição mais recente do mês
-      let latestMeasurement = null;
-      const monthMeasurements = measurementsByMonth.get(monthKey) || [];
-      if (monthMeasurements.length > 0) {
-        latestMeasurement = monthMeasurements.reduce((latest, current) => 
-          current.date > latest.date ? current : latest
-        );
-      }
-
-      // Obter valor da meta mensal
+      // Medição do mês
+      const monthMeasurement = measurementsByMonth.get(monthKey);
+      
+      // Meta do mês - extrair do array de metas calculado
       let goalValue = null;
-      const monthlyGoal = monthlyGoals[i];
-      if (monthlyGoal) {
+      const metaMensal = metas[i];
+      if (metaMensal) {
         switch (type) {
           case 'weight':
-            goalValue = monthlyGoal.peso;
+            goalValue = parseFloat(metaMensal.peso);
             break;
           case 'muscleMass':
-            goalValue = monthlyGoal.massaMuscular;
+            goalValue = parseFloat(metaMensal.massaMuscular);
             break;
           case 'fatMass':
-            goalValue = monthlyGoal.massaGordura;
+            goalValue = parseFloat(metaMensal.massaGordura);
             break;
           case 'bmi':
-            goalValue = monthlyGoal.imc;
+            goalValue = parseFloat(metaMensal.imc);
             break;
           case 'fatPercentage':
-            goalValue = monthlyGoal.percentualGordura;
+            goalValue = parseFloat(metaMensal.percentualGordura.replace('%', ''));
             break;
         }
       }
 
       chartData.push({
         month: monthName,
-        measurement: latestMeasurement ? latestMeasurement[type] : null,
+        measurement: monthMeasurement ? monthMeasurement[type] : null,
         goal: goalValue,
         fullDate: monthDate.toLocaleDateString('pt-BR')
       });
@@ -177,7 +228,7 @@ export default function MetricDetail() {
           </div>
         </div>
 
-        {/* Main Chart */}
+        {/* Gráfico Principal */}
         <Card className="bg-gradient-dark border-border/50 shadow-intense">
           <CardHeader className="pb-2">
             <CardTitle className="text-primary font-oswald text-lg flex items-center gap-2">
@@ -271,7 +322,7 @@ export default function MetricDetail() {
           </CardContent>
         </Card>
 
-        {/* Goal Status */}
+        {/* Status da Meta */}
         {goal && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card className="bg-gradient-dark border-border/50 shadow-intense">
@@ -341,8 +392,8 @@ export default function MetricDetail() {
           </div>
         )}
 
-        {/* Recent History */}
-        {metrics.length > 0 && (
+        {/* Histórico Recente */}
+        {metrics.filter(m => m[type] !== undefined).length > 0 && (
           <Card className="bg-gradient-dark border-border/50 shadow-intense">
             <CardHeader>
               <CardTitle className="text-primary font-oswald">
@@ -355,7 +406,7 @@ export default function MetricDetail() {
                   .filter(m => m[type] !== undefined)
                   .slice(-10)
                   .reverse()
-                  .map((metric, index) => (
+                  .map((metric) => (
                     <div 
                       key={metric.id}
                       className="flex justify-between items-center py-3 border-b border-border/30 last:border-0"
@@ -373,7 +424,7 @@ export default function MetricDetail() {
           </Card>
         )}
 
-        {/* No Data State */}
+        {/* Estado sem dados */}
         {metrics.filter(m => m[type] !== undefined).length === 0 && (
           <Card className="bg-gradient-dark border-border/50 shadow-intense">
             <CardContent className="flex flex-col items-center justify-center py-12">
