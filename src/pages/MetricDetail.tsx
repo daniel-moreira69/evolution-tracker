@@ -2,8 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, TrendingUp, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import { HealthMetric, Goal, MetricType } from "@/types/health";
 import { useState, useEffect } from "react";
 
@@ -78,17 +77,6 @@ function calcularMetas(params: {
 
   return metas;
 }
-
-const chartConfig = {
-  measurement: {
-    label: "Medição",
-    color: "hsl(var(--primary))",
-  },
-  goal: {
-    label: "Meta Mensal",
-    color: "hsl(var(--warning))",
-  },
-};
 
 export default function MetricDetail() {
   const { metricType } = useParams<{ metricType: string }>();
@@ -238,7 +226,7 @@ export default function MetricDetail() {
           </CardHeader>
           <CardContent>
             {chartData.length > 0 ? (
-              <ChartContainer config={chartConfig} className="h-80">
+              <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                     <CartesianGrid 
@@ -258,16 +246,17 @@ export default function MetricDetail() {
                       tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
                       domain={['dataMin - 2', 'dataMax + 2']}
                     />
-                    <ChartTooltip 
-                      content={
-                        <ChartTooltipContent 
-                          labelFormatter={(label, payload) => payload?.[0]?.payload?.fullDate}
-                          formatter={(value, name) => [
-                            value ? `${Number(value).toFixed(1)}${metric.unit}` : 'Sem dados', 
-                            name === 'measurement' ? 'Medição' : 'Meta Mensal'
-                          ]}
-                        />
-                      }
+                    <Tooltip 
+                      labelFormatter={(label, payload) => payload?.[0]?.payload?.fullDate}
+                      formatter={(value: any, name: string) => [
+                        value ? `${Number(value).toFixed(1)}${metric.unit}` : 'Sem dados', 
+                        name === 'measurement' ? 'Medição' : 'Meta Mensal'
+                      ]}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--popover))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '6px'
+                      }}
                     />
                     <Line 
                       type="monotone" 
@@ -282,7 +271,7 @@ export default function MetricDetail() {
                       }}
                       activeDot={{ 
                         r: 8, 
-                        fill: 'hsl(var(--primary-glow))',
+                        fill: 'hsl(var(--primary))',
                         stroke: 'hsl(var(--background))',
                         strokeWidth: 2
                       }}
@@ -309,7 +298,7 @@ export default function MetricDetail() {
                     />
                   </LineChart>
                 </ResponsiveContainer>
-              </ChartContainer>
+              </div>
             ) : (
               <div className="flex items-center justify-center h-80 text-muted-foreground">
                 <div className="text-center">
